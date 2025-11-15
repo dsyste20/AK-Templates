@@ -1,11 +1,18 @@
 import { useState } from 'react';
 import { useSiteContext } from '../contexts/SiteContext';
+import { useAuth } from '../contexts/AuthContext';
 import NavbarCustomizer from '../components/NavbarCustomizer';
 import SectionCustomizer from '../components/SectionCustomizer';
+import TemplatesManager from '../components/TemplatesManager';
 
 const BuilderPage = () => {
   const { siteConfig, setSiteType } = useSiteContext();
+  const { user, logout } = useAuth();
   const [previewMode, setPreviewMode] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -20,21 +27,44 @@ const BuilderPage = () => {
           alignItems: 'center',
         }}
       >
-        <h1 style={{ margin: 0 }}>Website Builder</h1>
-        <button
-          onClick={() => setPreviewMode(!previewMode)}
-          style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#3498db',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '1rem',
-          }}
-        >
-          {previewMode ? 'Edit Mode' : 'Preview Mode'}
-        </button>
+        <div>
+          <h1 style={{ margin: 0 }}>Website Builder</h1>
+          {user && (
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', opacity: 0.8 }}>
+              Ingelogd als: {user.email}
+            </p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button
+            onClick={() => setPreviewMode(!previewMode)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#3498db',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '1rem',
+            }}
+          >
+            {previewMode ? 'Edit Mode' : 'Preview Mode'}
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#e74c3c',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '1rem',
+            }}
+          >
+            Uitloggen
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -91,6 +121,11 @@ const BuilderPage = () => {
 
             {/* Navbar Customization */}
             <NavbarCustomizer />
+
+            {/* Templates Manager */}
+            <div style={{ marginTop: '2rem' }}>
+              <TemplatesManager />
+            </div>
 
             {/* Section Customization */}
             {siteConfig.sections.map((section) => (
