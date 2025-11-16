@@ -11,6 +11,7 @@ import MijnAccountPage from './pages/MijnAccountPage';
 import BuilderPage from './pages/BuilderPage';
 import SinglePageSite from './pages/SinglePageSite';
 import MultiPageSite from './pages/MultiPageSite';
+import TemplateBuilderPage from './pages/TemplateBuilderPage';
 import './App.css';
 
 function App() {
@@ -31,6 +32,10 @@ function App() {
           <Route path="/builder" element={<ProtectedRoute><BuilderPage /></ProtectedRoute>} />
           <Route path="/preview" element={<ProtectedRoute><SinglePageSite /></ProtectedRoute>} />
           <Route path="/preview-multi/*" element={<ProtectedRoute><MultiPageSite /></ProtectedRoute>} />
+          
+          {/* Template builder routes */}
+          <Route path="/templates/builder" element={<ProtectedRoute><TemplateBuilderPage /></ProtectedRoute>} />
+          <Route path="/templates/builder/:id" element={<ProtectedRoute><TemplateBuilderPage /></ProtectedRoute>} />
         </Routes>
       </Router>
     </SiteProvider>

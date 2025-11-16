@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 
 export default function TemplatesManager() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
-    const [editingId, setEditingId] = useState(null);
-    const [formData, setFormData] = useState({
-        name: '',
-    });
 
     useEffect(() => {
         if (user) {
@@ -41,57 +38,12 @@ export default function TemplatesManager() {
         }
     };
 
-    const handleCreate = async (e) => {
-        e.preventDefault();
-        setError('');
-
-        try {
-            const { data, error: createError } = await supabase
-                .from('templates')
-                .insert([
-                    {
-                        user_id: user.id,
-                        name: formData.name,
-                    },
-                ])
-                .select();
-
-            if (createError) {
-                setError('Fout bij aanmaken Web designs: ' + createError.message);
-            } else {
-                setTemplates([data[0], ...templates]);
-                setFormData({ name: '' });
-                setIsCreating(false);
-            }
-        } catch {
-            setError('Onverwachte fout bij aanmaken Web designs');
-        }
+    const handleCreateNew = () => {
+        navigate('/templates/builder');
     };
 
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-        setError('');
-
-        try {
-            const { data, error: updateError } = await supabase
-                .from('templates')
-                .update({
-                    name: formData.name,
-                })
-                .eq('id', editingId)
-                .eq('user_id', user.id)
-                .select();
-
-            if (updateError) {
-                setError('Fout bij bijwerken template: ' + updateError.message);
-            } else {
-                setTemplates(templates.map(t => t.id === editingId ? data[0] : t));
-                setFormData({ name: '' });
-                setEditingId(null);
-            }
-        } catch {
-            setError('Onverwachte fout bij bijwerken template');
-        }
+    const handleEdit = (template) => {
+        navigate(`/templates/builder/${template.id}`);
     };
 
     const handleDelete = async (id) => {
@@ -116,20 +68,6 @@ export default function TemplatesManager() {
         }
     };
 
-    const startEdit = (template) => {
-        setEditingId(template.id);
-        setFormData({
-            name: template.name,
-        });
-        setIsCreating(false);
-    };
-
-    const cancelEdit = () => {
-        setEditingId(null);
-        setIsCreating(false);
-        setFormData({ name: '' });
-    };
-
     if (loading) {
         return <div style={styles.loading}>Web designs laden...</div>;
     }
@@ -142,50 +80,12 @@ export default function TemplatesManager() {
                 </div>
             )}
 
-            {!isCreating && !editingId && (
-                <button
-                    onClick={() => setIsCreating(true)}
-                    style={styles.createButton}
-                >
-                    + Nieuwe Template
-                </button>
-            )}
-
-            {(isCreating || editingId) && (
-                <form
-                    onSubmit={editingId ? handleUpdate : handleCreate}
-                    style={styles.form}
-                >
-                    <h3 style={styles.formTitle}>
-                        {editingId ? 'Template Bewerken' : 'Nieuwe Web designs'}
-                    </h3>
-
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Naam</label>
-                        <input
-                            type="text"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                            style={styles.input}
-                            placeholder="Naam van je template"
-                        />
-                    </div>
-
-                    <div style={styles.formButtons}>
-                        <button type="submit" style={styles.saveButton}>
-                            {editingId ? 'Bijwerken' : 'Aanmaken'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={cancelEdit}
-                            style={styles.cancelButton}
-                        >
-                            Annuleren
-                        </button>
-                    </div>
-                </form>
-            )}
+            <button
+                onClick={handleCreateNew}
+                style={styles.createButton}
+            >
+                + Nieuwe Template
+            </button>
 
             {templates.length === 0 ? (
                 <div style={styles.empty}>
@@ -204,7 +104,7 @@ export default function TemplatesManager() {
                             </div>
                             <div style={styles.itemActions}>
                                 <button
-                                    onClick={() => startEdit(template)}
+                                    onClick={() => handleEdit(template)}
                                     style={styles.editButton}
                                 >
                                     Bewerken
@@ -251,60 +151,6 @@ const styles = {
         fontSize: '16px',
         fontWeight: '600',
         marginBottom: '20px',
-    },
-    form: {
-        backgroundColor: '#f8f9fa',
-        padding: '20px',
-        borderRadius: '8px',
-        marginBottom: '30px',
-    },
-    formTitle: {
-        fontSize: '20px',
-        marginBottom: '20px',
-        color: '#333',
-    },
-    inputGroup: {
-        marginBottom: '15px',
-    },
-    label: {
-        display: 'block',
-        marginBottom: '5px',
-        fontSize: '14px',
-        fontWeight: '500',
-        color: '#555',
-    },
-    input: {
-        width: '100%',
-        padding: '10px',
-        fontSize: '16px',
-        border: '1px solid #dddF',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-    },
-    formButtons: {
-        display: 'flex',
-        gap: '10px',
-        marginTop: '20px',
-    },
-    saveButton: {
-        padding: '10px 20px',
-        backgroundColor: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '600',
-    },
-    cancelButton: {
-        padding: '10px 20px',
-        backgroundColor: '#6c757d',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '600',
     },
     empty: {
         padding: '40px',
