@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <div style={styles.container}>
       <div style={styles.content}>
-        <h1 style={styles.title}>Welkom bij AK-Templates</h1>
+        <h1 style={styles.title}>Welkom bij AK-WebDesigns</h1>
         <p style={styles.subtitle}>
           Bouw eenvoudig je eigen website met onze aanpasbare componenten en templates
         </p>
@@ -53,9 +53,9 @@ export default function HomePage() {
         </div>
 
         <div style={styles.info}>
-          <h2 style={styles.infoTitle}>Over AK-Templates</h2>
+          <h2 style={styles.infoTitle}>Over AK-WebDesigns</h2>
           <p style={styles.infoText}>
-            AK-Templates is een React-platform waar gebruikers eenvoudig websites kunnen 
+              AK-WebDesigns is een React-platform waar gebruikers eenvoudig websites kunnen
             bouwen en aanpassen met vooraf gemaakte componenten. Of je nu een single-page 
             of multi-page website wilt maken, wij hebben de tools die je nodig hebt.
           </p>

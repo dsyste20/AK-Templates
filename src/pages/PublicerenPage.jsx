@@ -27,7 +27,7 @@ export default function PublicerenPage() {
     <div style={styles.container}>
       <nav style={styles.nav}>
         <div style={styles.navContent}>
-          <h1 style={styles.logo}>AK-Templates</h1>
+          <h1 style={styles.logo}>AK-WebDesigns</h1>
           <div style={styles.navLinks}>
             <a href="/dashboard" style={styles.navLink}>Dashboard</a>
             <a href="/mijn-website" style={styles.navLink}>Mijn Websites</a>

@@ -67,7 +67,7 @@ Deze applicatie gebruikt Supabase voor authenticatie en database beheer. Volg de
 
 1. Kopieer het `.env.example` bestand naar `.env`:
    ```bash
-   cp .env.example .env
+   cp .env .env
    ```
 
 2. Open `.env` en vul je Supabase credentials in:
