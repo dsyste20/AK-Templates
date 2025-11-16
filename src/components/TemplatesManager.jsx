@@ -31,12 +31,12 @@ export default function TemplatesManager() {
         .order('created_at', { ascending: false });
 
       if (fetchError) {
-        setError('Fout bij ophalen templates: ' + fetchError.message);
+        setError('Fout bij ophalen Web designs: ' + fetchError.message);
       } else {
         setTemplates(data || []);
       }
     } catch {
-      setError('Onverwachte fout bij ophalen templates');
+      setError('Onverwachte fout bij ophalen Web designs');
     } finally {
       setLoading(false);
     }
@@ -59,14 +59,14 @@ export default function TemplatesManager() {
         .select();
 
       if (createError) {
-        setError('Fout bij aanmaken template: ' + createError.message);
+        setError('Fout bij aanmaken Web designs: ' + createError.message);
       } else {
         setTemplates([data[0], ...templates]);
         setFormData({ name: '', description: '' });
         setIsCreating(false);
       }
     } catch {
-      setError('Onverwachte fout bij aanmaken template');
+      setError('Onverwachte fout bij aanmaken Web designs');
     }
   };
 
@@ -135,7 +135,7 @@ export default function TemplatesManager() {
   };
 
   if (loading) {
-    return <div style={styles.loading}>Templates laden...</div>;
+    return <div style={styles.loading}>Web designs laden...</div>;
   }
 
   return (
@@ -161,7 +161,7 @@ export default function TemplatesManager() {
           style={styles.form}
         >
           <h3 style={styles.formTitle}>
-            {editingId ? 'Template Bewerken' : 'Nieuwe Template'}
+            {editingId ? 'Template Bewerken' : 'Nieuwe Web designs'}
           </h3>
           
           <div style={styles.inputGroup}>
@@ -204,7 +204,7 @@ export default function TemplatesManager() {
 
       {templates.length === 0 ? (
         <div style={styles.empty}>
-          <p>Je hebt nog geen templates aangemaakt.</p>
+          <p>Je hebt nog geen Web designs aangemaakt.</p>
           <p>Klik op &quot;+ Nieuwe Template&quot; om te beginnen.</p>
         </div>
       ) : (

@@ -38,7 +38,7 @@ export default function DashboardPage() {
         </div>
 
         <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Mijn Templates</h2>
+          <h2 style={styles.sectionTitle}>Mijn Web designs</h2>
           <TemplatesManager />
         </div>
       </div>
