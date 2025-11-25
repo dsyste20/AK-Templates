@@ -334,6 +334,7 @@ export default function TemplateBuilderPage() {
             id: `block-${type}-${Date.now()}`,
             type: type,
             content: type === 'hero' ? 'Hero Tekst' : type === 'image' ? '' : 'Nieuwe tekst...',
+            imageUrl: type === 'image' ? '' : undefined,
             style: { fontFamily: 'Arial', fontSize: type === 'hero' ? 36 : 16, color: '#333333' },
             align: 'center'
         };
@@ -342,6 +343,34 @@ export default function TemplateBuilderPage() {
                 ? { ...s, blocks: [...s.blocks, newBlock] }
                 : s
         ));
+    };
+
+    // Block image upload handler
+    const handleBlockImageUpload = async (sectionId, blockId, file) => {
+        if (!file) return;
+
+        // Validate file before upload
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+            setError(validation.error);
+            return;
+        }
+
+        try {
+            setError('');
+            
+            const filePath = generateFilePath(user.id, 'blocks', file.name);
+            const { url, error: uploadError } = await uploadToStorage('assets', filePath, file);
+            
+            if (uploadError) {
+                setError('Fout bij uploaden afbeelding: ' + uploadError.message);
+            } else {
+                updateBlock(sectionId, blockId, { imageUrl: url });
+            }
+        } catch (err) {
+            console.error('Block image upload error:', err);
+            setError('Onverwachte fout bij uploaden afbeelding');
+        }
     };
 
     const removeBlock = (sectionId, blockId) => {
@@ -410,6 +439,63 @@ export default function TemplateBuilderPage() {
 
     const updateFooterAlign = (align) => {
         setFooter({ ...footer, align });
+    };
+
+    // Helper function to render a block in the preview
+    const renderPreviewBlock = (block) => {
+        if (block.type === 'image') {
+            return block.imageUrl ? (
+                <div
+                    key={block.id}
+                    style={{
+                        textAlign: block.align,
+                        width: '100%',
+                        marginBottom: '0.5rem',
+                    }}
+                >
+                    <img 
+                        src={block.imageUrl} 
+                        alt="Block image" 
+                        style={{ 
+                            maxWidth: '100%', 
+                            height: 'auto',
+                            borderRadius: '4px',
+                        }}
+                    />
+                </div>
+            ) : (
+                <div
+                    key={block.id}
+                    style={{
+                        textAlign: block.align,
+                        width: '100%',
+                        marginBottom: '0.5rem',
+                        padding: '2rem',
+                        backgroundColor: '#f0f0f0',
+                        color: '#999',
+                        borderRadius: '4px',
+                    }}
+                >
+                    [Afbeelding placeholder]
+                </div>
+            );
+        }
+        
+        return (
+            <div
+                key={block.id}
+                style={{
+                    fontFamily: block.style.fontFamily,
+                    fontSize: `${block.style.fontSize}px`,
+                    color: block.style.color,
+                    textAlign: block.align,
+                    width: '100%',
+                    marginBottom: '0.5rem',
+                }}
+            >
+                {block.content}
+            </div>
+        );
     };
 
     if (loading) {
@@ -680,6 +766,7 @@ export default function TemplateBuilderPage() {
                                                 <div style={styles.addBlockButtons}>
                                                     <button onClick={() => addBlock(section.id, 'hero')} style={styles.addBlockButton}>+ Hero</button>
                                                     <button onClick={() => addBlock(section.id, 'text')} style={styles.addBlockButton}>+ Tekst</button>
+                                                    <button onClick={() => addBlock(section.id, 'image')} style={styles.addBlockButton}>+ Afbeelding</button>
                                                 </div>
                                             </div>
 
@@ -687,7 +774,7 @@ export default function TemplateBuilderPage() {
                                                 <div key={block.id} style={styles.blockEditor}>
                                                     <div style={styles.blockHeader}>
                                                         <span style={styles.blockType}>
-                                                            {block.type === 'hero' ? '🎯' : '📝'} {block.type}
+                                                            {block.type === 'hero' ? '🎯' : block.type === 'image' ? '🖼️' : '📝'} {block.type}
                                                         </span>
                                                         <div style={styles.blockActions}>
                                                             <button
@@ -713,54 +800,98 @@ export default function TemplateBuilderPage() {
                                                         </div>
                                                     </div>
 
-                                                    <textarea
-                                                        value={block.content}
-                                                        onChange={(e) => updateBlock(section.id, block.id, { content: e.target.value })}
-                                                        placeholder="Tekst invoeren..."
-                                                        style={styles.blockTextarea}
-                                                    />
+                                                    {/* Image block editor */}
+                                                    {block.type === 'image' ? (
+                                                        <div style={styles.imageBlockEditor}>
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => handleBlockImageUpload(section.id, block.id, e.target.files?.[0])}
+                                                                style={styles.fileInput}
+                                                            />
+                                                            {block.imageUrl && (
+                                                                <div style={styles.blockImagePreviewContainer}>
+                                                                    <img 
+                                                                        src={block.imageUrl} 
+                                                                        alt="Block image" 
+                                                                        style={styles.blockImagePreview}
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => updateBlock(section.id, block.id, { imageUrl: '' })}
+                                                                        style={styles.removeButton}
+                                                                    >
+                                                                        Verwijder
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                            <div style={styles.alignmentRow}>
+                                                                <label style={styles.alignLabel}>Uitlijning:</label>
+                                                                {['left', 'center', 'right'].map(align => (
+                                                                    <label key={align} style={styles.alignOption}>
+                                                                        <input
+                                                                            type="radio"
+                                                                            name={`align-${block.id}`}
+                                                                            checked={block.align === align}
+                                                                            onChange={() => updateBlock(section.id, block.id, { align })}
+                                                                        />
+                                                                        {align === 'left' ? 'Links' : align === 'center' ? 'Midden' : 'Rechts'}
+                                                                    </label>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        /* Text/Hero block editor */
+                                                        <>
+                                                            <textarea
+                                                                value={block.content}
+                                                                onChange={(e) => updateBlock(section.id, block.id, { content: e.target.value })}
+                                                                placeholder="Tekst invoeren..."
+                                                                style={styles.blockTextarea}
+                                                            />
 
-                                                    <div style={styles.blockStyleRow}>
-                                                        <select
-                                                            value={block.style.fontFamily}
-                                                            onChange={(e) => updateBlockStyle(section.id, block.id, { fontFamily: e.target.value })}
-                                                            style={styles.fontSelect}
-                                                        >
-                                                            {FONT_OPTIONS.map(font => (
-                                                                <option key={font} value={font}>{font}</option>
-                                                            ))}
-                                                        </select>
-                                                        <input
-                                                            type="number"
-                                                            value={block.style.fontSize}
-                                                            onChange={(e) => updateBlockStyle(section.id, block.id, { fontSize: parseInt(e.target.value, 10) || 16 })}
-                                                            style={styles.fontSizeInput}
-                                                            min="8"
-                                                            max="120"
-                                                        />
-                                                        <span style={styles.pxLabel}>px</span>
-                                                        <input
-                                                            type="color"
-                                                            value={block.style.color}
-                                                            onChange={(e) => updateBlockStyle(section.id, block.id, { color: e.target.value })}
-                                                            style={styles.colorPickerSmall}
-                                                        />
-                                                    </div>
-
-                                                    <div style={styles.alignmentRow}>
-                                                        <label style={styles.alignLabel}>Uitlijning:</label>
-                                                        {['left', 'center', 'right'].map(align => (
-                                                            <label key={align} style={styles.alignOption}>
+                                                            <div style={styles.blockStyleRow}>
+                                                                <select
+                                                                    value={block.style.fontFamily}
+                                                                    onChange={(e) => updateBlockStyle(section.id, block.id, { fontFamily: e.target.value })}
+                                                                    style={styles.fontSelect}
+                                                                >
+                                                                    {FONT_OPTIONS.map(font => (
+                                                                        <option key={font} value={font}>{font}</option>
+                                                                    ))}
+                                                                </select>
                                                                 <input
-                                                                    type="radio"
-                                                                    name={`align-${block.id}`}
-                                                                    checked={block.align === align}
-                                                                    onChange={() => updateBlock(section.id, block.id, { align })}
+                                                                    type="number"
+                                                                    value={block.style.fontSize}
+                                                                    onChange={(e) => updateBlockStyle(section.id, block.id, { fontSize: parseInt(e.target.value, 10) || 16 })}
+                                                                    style={styles.fontSizeInput}
+                                                                    min="8"
+                                                                    max="120"
                                                                 />
-                                                                {align === 'left' ? 'Links' : align === 'center' ? 'Midden' : 'Rechts'}
-                                                            </label>
-                                                        ))}
-                                                    </div>
+                                                                <span style={styles.pxLabel}>px</span>
+                                                                <input
+                                                                    type="color"
+                                                                    value={block.style.color}
+                                                                    onChange={(e) => updateBlockStyle(section.id, block.id, { color: e.target.value })}
+                                                                    style={styles.colorPickerSmall}
+                                                                />
+                                                            </div>
+
+                                                            <div style={styles.alignmentRow}>
+                                                                <label style={styles.alignLabel}>Uitlijning:</label>
+                                                                {['left', 'center', 'right'].map(align => (
+                                                                    <label key={align} style={styles.alignOption}>
+                                                                        <input
+                                                                            type="radio"
+                                                                            name={`align-${block.id}`}
+                                                                            checked={block.align === align}
+                                                                            onChange={() => updateBlock(section.id, block.id, { align })}
+                                                                        />
+                                                                        {align === 'left' ? 'Links' : align === 'center' ? 'Midden' : 'Rechts'}
+                                                                    </label>
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -882,21 +1013,7 @@ export default function TemplateBuilderPage() {
                                                     minHeight: '150px',
                                                 }}
                                             >
-                                                {section.blocks.map((block) => (
-                                                    <div
-                                                        key={block.id}
-                                                        style={{
-                                                            fontFamily: block.style.fontFamily,
-                                                            fontSize: `${block.style.fontSize}px`,
-                                                            color: block.style.color,
-                                                            textAlign: block.align,
-                                                            width: '100%',
-                                                            marginBottom: '0.5rem',
-                                                        }}
-                                                    >
-                                                        {block.content}
-                                                    </div>
-                                                ))}
+                                                {section.blocks.map((block) => renderPreviewBlock(block))}
                                             </div>
                                         ))}
                                         {/* Footer in sidebar layout */}
@@ -928,21 +1045,7 @@ export default function TemplateBuilderPage() {
                                                 minHeight: section.blocks.some(b => b.type === 'hero') ? '300px' : '150px',
                                             }}
                                         >
-                                            {section.blocks.map((block) => (
-                                                <div
-                                                    key={block.id}
-                                                    style={{
-                                                        fontFamily: block.style.fontFamily,
-                                                        fontSize: `${block.style.fontSize}px`,
-                                                        color: block.style.color,
-                                                        textAlign: block.align,
-                                                        width: '100%',
-                                                        marginBottom: '0.5rem',
-                                                    }}
-                                                >
-                                                    {block.content}
-                                                </div>
-                                            ))}
+                                            {section.blocks.map((block) => renderPreviewBlock(block))}
                                         </div>
                                     ))}
 
@@ -1022,21 +1125,7 @@ export default function TemplateBuilderPage() {
                                                 minHeight: '200px',
                                             }}
                                         >
-                                            {section.blocks.map((block) => (
-                                                <div
-                                                    key={block.id}
-                                                    style={{
-                                                        fontFamily: block.style.fontFamily,
-                                                        fontSize: `${block.style.fontSize}px`,
-                                                        color: block.style.color,
-                                                        textAlign: block.align,
-                                                        width: '100%',
-                                                        marginBottom: '0.5rem',
-                                                    }}
-                                                >
-                                                    {block.content}
-                                                </div>
-                                            ))}
+                                            {section.blocks.map((block) => renderPreviewBlock(block))}
                                         </div>
                                     ))}
                                     <div style={{
@@ -1067,21 +1156,7 @@ export default function TemplateBuilderPage() {
                                             minHeight: section.blocks.some(b => b.type === 'hero') ? '400px' : '200px',
                                         }}
                                     >
-                                        {section.blocks.map((block) => (
-                                            <div
-                                                key={block.id}
-                                                style={{
-                                                    fontFamily: block.style.fontFamily,
-                                                    fontSize: `${block.style.fontSize}px`,
-                                                    color: block.style.color,
-                                                    textAlign: block.align,
-                                                    width: '100%',
-                                                    marginBottom: '0.5rem',
-                                                }}
-                                            >
-                                                {block.content}
-                                            </div>
-                                        ))}
+                                        {section.blocks.map((block) => renderPreviewBlock(block))}
                                     </div>
                                 ))}
 
@@ -1658,5 +1733,23 @@ const styles = {
         cursor: 'pointer',
         fontSize: '16px',
         fontWeight: '600',
+    },
+    imageBlockEditor: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+    },
+    blockImagePreviewContainer: {
+        marginTop: '0.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+    },
+    blockImagePreview: {
+        maxWidth: '120px',
+        maxHeight: '80px',
+        objectFit: 'cover',
+        borderRadius: '4px',
+        border: '1px solid #ddd',
     },
 };
