@@ -83,6 +83,9 @@ export default function TemplateBuilderPage() {
         align: 'center'
     });
     
+    // Site type (meta setting)
+    const [siteType, setSiteType] = useState('single-page');
+    
     // Ref for logo file input
     const logoInputRef = useRef(null);
 
@@ -122,6 +125,9 @@ export default function TemplateBuilderPage() {
                 if (elements.footer) {
                     setFooter(elements.footer);
                 }
+                if (elements.meta) {
+                    setSiteType(elements.meta.siteType || 'single-page');
+                }
             }
         } catch {
             setError('Onverwachte fout bij ophalen template');
@@ -150,7 +156,10 @@ export default function TemplateBuilderPage() {
                     tabs: navbarTabs
                 },
                 sections: sections,
-                footer: footer
+                footer: footer,
+                meta: {
+                    siteType: siteType
+                }
             };
 
             if (id) {
@@ -539,16 +548,42 @@ export default function TemplateBuilderPage() {
                 <div style={styles.mainContent}>
                     {/* Left sidebar - Customization Panel */}
                     <div style={styles.leftSidebar}>
-                        {/* Template Name */}
+                        {/* General - Template Name and Site Type */}
                         <div style={styles.card}>
-                            <h3 style={styles.cardTitle}>Template Naam</h3>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                style={styles.textInput}
-                                placeholder="Voer template naam in..."
-                            />
+                            <h3 style={styles.cardTitle}>Algemeen</h3>
+                            <div style={styles.fieldGroup}>
+                                <label style={styles.fieldLabel}>Naam:</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    style={styles.textInput}
+                                    placeholder="Voer template naam in..."
+                                />
+                            </div>
+                            <div style={styles.fieldGroup}>
+                                <label style={styles.fieldLabel}>Site Type:</label>
+                                <div style={styles.radioGroup}>
+                                    <label style={styles.radioLabel}>
+                                        <input
+                                            type="radio"
+                                            name="siteType"
+                                            checked={siteType === 'single-page'}
+                                            onChange={() => setSiteType('single-page')}
+                                        />
+                                        Single-page
+                                    </label>
+                                    <label style={styles.radioLabel}>
+                                        <input
+                                            type="radio"
+                                            name="siteType"
+                                            checked={siteType === 'multi-page'}
+                                            onChange={() => setSiteType('multi-page')}
+                                        />
+                                        Multi-page
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Navigation Type Selection */}
@@ -1271,6 +1306,9 @@ const styles = {
         color: '#333',
         marginBottom: '1rem',
         marginTop: 0,
+    },
+    fieldGroup: {
+        marginBottom: '1rem',
     },
     textInput: {
         width: '100%',
