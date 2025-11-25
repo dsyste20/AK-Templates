@@ -57,9 +57,9 @@ export default function TemplateBuilderPage() {
     const [navbarBgColor, setNavbarBgColor] = useState('#2c3e50');
     const [navbarTextColor, setNavbarTextColor] = useState('#ffffff');
     const [navbarTabs, setNavbarTabs] = useState([
-        { id: 1, label: 'Home', link: '#home' },
-        { id: 2, label: 'Over', link: '#about' },
-        { id: 3, label: 'Contact', link: '#contact' }
+        { id: 'tab-1', label: 'Home', link: '#home' },
+        { id: 'tab-2', label: 'Over', link: '#about' },
+        { id: 'tab-3', label: 'Contact', link: '#contact' }
     ]);
     const [newTabLabel, setNewTabLabel] = useState('');
     const [newTabLink, setNewTabLink] = useState('');
@@ -67,11 +67,11 @@ export default function TemplateBuilderPage() {
     // Sections with blocks
     const [sections, setSections] = useState([
         {
-            id: 1,
+            id: 'section-default',
             background: { color: '#3498db', imageUrl: '' },
             blocks: [
-                { id: 1, type: 'hero', content: 'Welkom', style: { fontFamily: 'Arial', fontSize: 48, color: '#ffffff' }, align: 'center' },
-                { id: 2, type: 'text', content: 'Uw website begint hier', style: { fontFamily: 'Arial', fontSize: 20, color: '#ffffff' }, align: 'center' }
+                { id: 'block-hero-default', type: 'hero', content: 'Welkom', style: { fontFamily: 'Arial', fontSize: 48, color: '#ffffff' }, align: 'center' },
+                { id: 'block-text-default', type: 'text', content: 'Uw website begint hier', style: { fontFamily: 'Arial', fontSize: 20, color: '#ffffff' }, align: 'center' }
             ]
         }
     ]);
@@ -267,7 +267,7 @@ export default function TemplateBuilderPage() {
     // Navbar tab management
     const handleAddTab = () => {
         if (newTabLabel.trim() && newTabLink.trim()) {
-            setNavbarTabs([...navbarTabs, { id: Date.now(), label: newTabLabel, link: newTabLink }]);
+            setNavbarTabs([...navbarTabs, { id: `tab-${Date.now()}`, label: newTabLabel, link: newTabLink }]);
             setNewTabLabel('');
             setNewTabLink('');
         }
@@ -286,7 +286,7 @@ export default function TemplateBuilderPage() {
     // Section management
     const addSection = () => {
         const newSection = {
-            id: Date.now(),
+            id: `section-${Date.now()}`,
             background: { color: '#ffffff', imageUrl: '' },
             blocks: []
         };
@@ -331,7 +331,7 @@ export default function TemplateBuilderPage() {
     // Block management within sections
     const addBlock = (sectionId, type) => {
         const newBlock = {
-            id: Date.now(),
+            id: `block-${type}-${Date.now()}`,
             type: type,
             content: type === 'hero' ? 'Hero Tekst' : type === 'image' ? '' : 'Nieuwe tekst...',
             style: { fontFamily: 'Arial', fontSize: type === 'hero' ? 36 : 16, color: '#333333' },

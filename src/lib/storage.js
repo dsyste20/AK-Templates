@@ -59,14 +59,19 @@ export async function deleteFromStorage(bucket, path) {
  */
 export function generateFilePath(userId, folder, fileName) {
   const timestamp = Date.now();
-  // Extract file extension and sanitize separately
+  // Sanitize userId to prevent path traversal - only allow alphanumeric, underscore, and hyphen
+  const sanitizedUserId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
+  // Extract file extension and sanitize separately (handle dotfiles by finding last dot after position 0)
   const lastDotIndex = fileName.lastIndexOf('.');
-  const baseName = lastDotIndex > 0 ? fileName.slice(0, lastDotIndex) : fileName;
-  const extension = lastDotIndex > 0 ? fileName.slice(lastDotIndex) : '';
+  const hasValidExtension = lastDotIndex > 0;
+  const baseName = hasValidExtension ? fileName.slice(0, lastDotIndex) : fileName;
+  const extension = hasValidExtension ? fileName.slice(lastDotIndex) : '';
   // Sanitize base name more strictly - only allow alphanumeric, underscore, and hyphen
-  const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
+  const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50) || 'file';
   // Only allow common image extensions
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-  const sanitizedExtension = allowedExtensions.includes(extension.toLowerCase()) ? extension.toLowerCase() : '.png';
-  return `${userId}/${folder}/${timestamp}-${sanitizedBaseName}${sanitizedExtension}`;
+  const sanitizedExtension = allowedExtensions.includes(extension.toLowerCase()) ? extension.toLowerCase() : '';
+  // Use timestamp-based unique name if no valid extension
+  const finalFileName = sanitizedExtension ? `${sanitizedBaseName}${sanitizedExtension}` : sanitizedBaseName;
+  return `${sanitizedUserId}/${folder}/${timestamp}-${finalFileName}`;
 }
