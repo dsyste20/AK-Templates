@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { signOut, supabase } from '../lib/supabaseClient';
@@ -6,11 +6,18 @@ import { signOut, supabase } from '../lib/supabaseClient';
 export default function PublicerenPage() {
     const { user, profile } = useAuth();
     const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         url: '',
     });
+
+    const [templates, setTemplates] = useState([]);
+    const [templatesLoading, setTemplatesLoading] = useState(true);
+    const [templatesError, setTemplatesError] = useState('');
+    const [selectedTemplateId, setSelectedTemplateId] = useState('');
+
     const [loading, setLoading] = useState(false);
     const [publishError, setPublishError] = useState('');
     const [publishedUrl, setPublishedUrl] = useState('');
@@ -26,10 +33,38 @@ export default function PublicerenPage() {
             .toLowerCase()
             .trim()
             .replace(/\s+/g, '-')          // spaties -> -
-            .replace(/[^a-z0-9-]/g, '')    // alleen a-z, 0-9 en -
-            .replace(/-+/g, '-')           // dubbele - -> enkele -
+            .replace(/[^a-z0-9-]/g, '')    // alles behalve a-z, 0-9 en - weg
+            .replace(/-+/g, '-')           // dubbele - -> enkele
             .replace(/^-+|-+$/g, '');      // leading/trailing - weg
     };
+
+    // Templates van de ingelogde gebruiker ophalen
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchTemplates = async () => {
+            setTemplatesLoading(true);
+            setTemplatesError('');
+
+            const { data, error } = await supabase
+                .from('templates')
+                .select('id, name')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Fout bij ophalen templates:', error);
+                setTemplatesError('Kon je templates niet ophalen.');
+                setTemplates([]);
+            } else {
+                setTemplates(data || []);
+            }
+
+            setTemplatesLoading(false);
+        };
+
+        fetchTemplates();
+    }, [user]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,9 +79,14 @@ export default function PublicerenPage() {
                 return;
             }
 
-            // Kies bron voor slug: ingevulde URL of titel
+            if (!selectedTemplateId) {
+                setPublishError('Kies eerst een template.');
+                setLoading(false);
+                return;
+            }
+
             const baseForSlug = formData.url?.trim() || formData.title;
-            let slug = makeSlug(baseForSlug);
+            const slug = makeSlug(baseForSlug);
 
             if (!slug) {
                 setPublishError('Kon geen geldige URL/slug genereren. Pas de titel of URL aan.');
@@ -54,39 +94,48 @@ export default function PublicerenPage() {
                 return;
             }
 
-            // Aanmaken site in Supabase
             const { data, error } = await supabase
                 .from('sites')
                 .insert([
                     {
                         user_id: user.id,
+                        template_id: selectedTemplateId,     // 🔸 koppeling met template
                         title: formData.title,
                         description: formData.description,
                         slug,
                         is_published: true,
+                        // theme laat je weg, heeft default 'default'
+                        // config: siteConfig, // later als je de echte builder-config mee wilt geven
                     },
                 ])
                 .select()
                 .single();
 
             if (error) {
-                // Als slug uniek moet zijn, kun je hier ook controleren op duplicate key error
+                console.error('Fout bij publiceren:', error);
                 setPublishError('Fout bij publiceren: ' + error.message);
             } else {
-                // Bouw publieke URL (bijv. https://jouwdomein.nl/w/slug)
                 const baseUrl = window.location.origin;
                 const publicUrl = `${baseUrl}/w/${data.slug}`;
-
                 setPublishedUrl(publicUrl);
-                // optioneel: form leegmaken
+                // optioneel: form resetten
                 // setFormData({ title: '', description: '', url: '' });
+                // setSelectedTemplateId('');
             }
         } catch (err) {
-            setPublishError(err, 'Onverwachte fout bij publiceren.');
+            console.error(err);
+            setPublishError('Onverwachte fout bij publiceren.');
         } finally {
             setLoading(false);
         }
     };
+
+    const isPublishDisabled =
+        loading ||
+        templatesLoading ||
+        !selectedTemplateId ||
+        !formData.title ||
+        !formData.description;
 
     return (
         <div style={styles.container}>
@@ -120,6 +169,12 @@ export default function PublicerenPage() {
                         </div>
                     )}
 
+                    {templatesError && (
+                        <div style={styles.error}>
+                            {templatesError}
+                        </div>
+                    )}
+
                     {publishedUrl && (
                         <div style={styles.success}>
                             <p style={{ margin: 0 }}>Je website is gepubliceerd!</p>
@@ -133,6 +188,30 @@ export default function PublicerenPage() {
                     )}
 
                     <form onSubmit={handleSubmit} style={styles.form}>
+                        <div style={styles.inputGroup}>
+                            <label style={styles.label}>Kies een opgeslagen template</label>
+                            {templatesLoading ? (
+                                <div style={styles.smallText}>Templates laden...</div>
+                            ) : templates.length === 0 ? (
+                                <div style={styles.smallText}>
+                                    Je hebt nog geen templates aangemaakt. Maak eerst een template in &quot;Mijn Websites&quot;.
+                                </div>
+                            ) : (
+                                <select
+                                    value={selectedTemplateId}
+                                    onChange={(e) => setSelectedTemplateId(e.target.value)}
+                                    style={styles.input}
+                                >
+                                    <option value="">-- Kies een template --</option>
+                                    {templates.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+
                         <div style={styles.inputGroup}>
                             <label style={styles.label}>Titel</label>
                             <input
@@ -167,13 +246,26 @@ export default function PublicerenPage() {
                                 placeholder="mijn-geweldige-website"
                             />
                             <small style={styles.hint}>
-                                Deze wordt gebruikt als onderdeel van je website URL (bijv. /w/mijn-geweldige-website)
+                                Dit wordt gebruikt als onderdeel van je website-URL (bijv. /w/mijn-geweldige-website).
                             </small>
                         </div>
 
-                        <button type="submit" style={styles.submitButton} disabled={loading}>
+                        <button
+                            type="submit"
+                            style={{
+                                ...styles.submitButton,
+                                ...(isPublishDisabled ? styles.submitButtonDisabled : {}),
+                            }}
+                            disabled={isPublishDisabled}
+                        >
                             {loading ? 'Bezig met publiceren...' : 'Publiceren'}
                         </button>
+
+                        {isPublishDisabled && (
+                            <div style={styles.smallText}>
+                                Kies eerst een template en vul titel + beschrijving in om te kunnen publiceren.
+                            </div>
+                        )}
                     </form>
 
                     <div style={styles.info}>
@@ -186,7 +278,7 @@ export default function PublicerenPage() {
                                 Schrijf een goede beschrijving zodat bezoekers weten wat ze kunnen verwachten
                             </li>
                             <li style={styles.listItem}>
-                                De URL kan later nog aangepast worden (slug)
+                                De URL (slug) kan later nog aangepast worden
                             </li>
                             <li style={styles.listItem}>
                                 Test je website grondig voordat je publiceert
@@ -317,6 +409,10 @@ const styles = {
         fontSize: '16px',
         fontWeight: '600',
     },
+    submitButtonDisabled: {
+        backgroundColor: '#b5dabf',
+        cursor: 'not-allowed',
+    },
     error: {
         padding: '10px 14px',
         marginBottom: '20px',
@@ -358,5 +454,10 @@ const styles = {
         marginBottom: '8px',
         color: '#666',
         lineHeight: '1.6',
+    },
+    smallText: {
+        marginTop: '6px',
+        fontSize: '12px',
+        color: '#777',
     },
 };
