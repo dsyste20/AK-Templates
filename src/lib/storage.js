@@ -59,6 +59,14 @@ export async function deleteFromStorage(bucket, path) {
  */
 export function generateFilePath(userId, folder, fileName) {
   const timestamp = Date.now();
-  const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-  return `${userId}/${folder}/${timestamp}-${sanitizedFileName}`;
+  // Extract file extension and sanitize separately
+  const lastDotIndex = fileName.lastIndexOf('.');
+  const baseName = lastDotIndex > 0 ? fileName.slice(0, lastDotIndex) : fileName;
+  const extension = lastDotIndex > 0 ? fileName.slice(lastDotIndex) : '';
+  // Sanitize base name more strictly - only allow alphanumeric, underscore, and hyphen
+  const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
+  // Only allow common image extensions
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+  const sanitizedExtension = allowedExtensions.includes(extension.toLowerCase()) ? extension.toLowerCase() : '.png';
+  return `${userId}/${folder}/${timestamp}-${sanitizedBaseName}${sanitizedExtension}`;
 }

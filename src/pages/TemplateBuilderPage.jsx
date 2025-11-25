@@ -16,6 +16,28 @@ const FONT_OPTIONS = [
     'Impact',
 ];
 
+// File upload validation constants
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+/**
+ * Validates an image file before upload
+ * @param {File} file - The file to validate
+ * @returns {{valid: boolean, error: string|null}}
+ */
+function validateImageFile(file) {
+    if (!file) {
+        return { valid: false, error: 'Geen bestand geselecteerd' };
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        return { valid: false, error: 'Alleen JPEG, PNG, GIF en WebP afbeeldingen zijn toegestaan' };
+    }
+    if (file.size > MAX_FILE_SIZE) {
+        return { valid: false, error: 'Bestand is te groot. Maximaal 5MB toegestaan' };
+    }
+    return { valid: true, error: null };
+}
+
 export default function TemplateBuilderPage() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
@@ -183,6 +205,13 @@ export default function TemplateBuilderPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // Validate file before upload
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+            setError(validation.error);
+            return;
+        }
+
         try {
             setUploadingLogo(true);
             setError('');
@@ -195,7 +224,8 @@ export default function TemplateBuilderPage() {
             } else {
                 setLogoUrl(url);
             }
-        } catch {
+        } catch (err) {
+            console.error('Logo upload error:', err);
             setError('Onverwachte fout bij uploaden logo');
         } finally {
             setUploadingLogo(false);
@@ -205,6 +235,13 @@ export default function TemplateBuilderPage() {
     // Section background image upload handler
     const handleSectionBackgroundUpload = async (sectionId, file) => {
         if (!file) return;
+
+        // Validate file before upload
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+            setError(validation.error);
+            return;
+        }
 
         try {
             setError('');
@@ -221,7 +258,8 @@ export default function TemplateBuilderPage() {
                         : s
                 ));
             }
-        } catch {
+        } catch (err) {
+            console.error('Background upload error:', err);
             setError('Onverwachte fout bij uploaden achtergrond');
         }
     };
@@ -695,7 +733,7 @@ export default function TemplateBuilderPage() {
                                                         <input
                                                             type="number"
                                                             value={block.style.fontSize}
-                                                            onChange={(e) => updateBlockStyle(section.id, block.id, { fontSize: parseInt(e.target.value) || 16 })}
+                                                            onChange={(e) => updateBlockStyle(section.id, block.id, { fontSize: parseInt(e.target.value, 10) || 16 })}
                                                             style={styles.fontSizeInput}
                                                             min="8"
                                                             max="120"
@@ -753,7 +791,7 @@ export default function TemplateBuilderPage() {
                                 <input
                                     type="number"
                                     value={footer.style.fontSize}
-                                    onChange={(e) => updateFooterStyle({ fontSize: parseInt(e.target.value) || 14 })}
+                                    onChange={(e) => updateFooterStyle({ fontSize: parseInt(e.target.value, 10) || 14 })}
                                     style={styles.fontSizeInput}
                                     min="8"
                                     max="48"
