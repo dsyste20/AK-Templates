@@ -460,7 +460,7 @@ export default function TemplateBuilderPage() {
                     style={styles.cancelButton}
                     disabled={saving}
                 >
-                    Cancel
+                    Annuleren
                 </button>
                 <button
                     onClick={handleSave}
