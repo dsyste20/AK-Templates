@@ -7,13 +7,11 @@ import { uploadToStorage, generateFilePath } from '../lib/storage';
 // Available web-safe fonts
 const FONT_OPTIONS = [
     'Arial',
-    'Helvetica',
     'Georgia',
+    'Helvetica Neue',
     'Times New Roman',
-    'Verdana',
-    'Trebuchet MS',
     'Courier New',
-    'Impact',
+    'Roboto',
 ];
 
 // File upload validation constants
@@ -72,9 +70,13 @@ export default function TemplateBuilderPage() {
             blocks: [
                 { id: 'block-hero-default', type: 'hero', content: 'Welkom', style: { fontFamily: 'Arial', fontSize: 48, color: '#ffffff' }, align: 'center' },
                 { id: 'block-text-default', type: 'text', content: 'Uw website begint hier', style: { fontFamily: 'Arial', fontSize: 20, color: '#ffffff' }, align: 'center' }
-            ]
+            ],
+            link: '' // Nav link for single-page scrolling
         }
     ]);
+    
+    // Multi-page current page state (for multi-page site type)
+    const [currentPage, setCurrentPage] = useState(null);
     
     // Footer settings
     const [footer, setFooter] = useState({
@@ -297,7 +299,8 @@ export default function TemplateBuilderPage() {
         const newSection = {
             id: `section-${Date.now()}`,
             background: { color: '#ffffff', imageUrl: '' },
-            blocks: []
+            blocks: [],
+            link: '' // Nav link for single-page scrolling
         };
         setSections([...sections, newSection]);
     };
@@ -310,6 +313,14 @@ export default function TemplateBuilderPage() {
         setSections(sections.map(s => 
             s.id === sectionId 
                 ? { ...s, background: { ...s.background, [field]: value } }
+                : s
+        ));
+    };
+
+    const updateSectionLink = (sectionId, link) => {
+        setSections(sections.map(s => 
+            s.id === sectionId 
+                ? { ...s, link }
                 : s
         ));
     };
@@ -455,6 +466,33 @@ export default function TemplateBuilderPage() {
 
     const updateFooterAlign = (align) => {
         setFooter({ ...footer, align });
+    };
+
+    // Handle nav tab click for preview navigation
+    const handleNavTabClick = (tab) => {
+        if (siteType === 'single-page') {
+            // Single-page: scroll to the linked section
+            const linkedSection = sections.find(s => s.link === tab.link);
+            if (linkedSection) {
+                const element = document.getElementById(`preview-section-${linkedSection.id}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        } else {
+            // Multi-page: switch to that page/tab
+            setCurrentPage(tab.link);
+        }
+    };
+
+    // Get sections for current page (multi-page mode)
+    const getVisibleSections = () => {
+        if (siteType === 'multi-page' && currentPage) {
+            // For multi-page, only show sections linked to the current page
+            return sections.filter(s => s.link === currentPage);
+        }
+        // For single-page, show all sections
+        return sections;
     };
 
     // Helper function to render a block in the preview
@@ -801,6 +839,23 @@ export default function TemplateBuilderPage() {
                                             )}
                                         </div>
 
+                                        {/* Link section to nav (for single-page scrolling) */}
+                                        {siteType === 'single-page' && (
+                                            <div style={styles.sectionField}>
+                                                <label style={styles.fieldLabel}>Koppel aan nav:</label>
+                                                <select
+                                                    value={section.link || ''}
+                                                    onChange={(e) => updateSectionLink(section.id, e.target.value)}
+                                                    style={styles.navLinkSelect}
+                                                >
+                                                    <option value="">-- Geen --</option>
+                                                    {navbarTabs.map(tab => (
+                                                        <option key={tab.id} value={tab.link}>{tab.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+
                                         {/* Blocks in this section */}
                                         <div style={styles.blocksArea}>
                                             <div style={styles.blocksHeader}>
@@ -1013,7 +1068,15 @@ export default function TemplateBuilderPage() {
                                     </div>
                                     <div style={styles.previewNavTabs}>
                                         {navbarTabs.map((tab) => (
-                                            <span key={tab.id} style={{ ...styles.previewNavTab, color: navbarTextColor }}>
+                                            <span 
+                                                key={tab.id} 
+                                                style={{ 
+                                                    ...styles.previewNavTab, 
+                                                    color: navbarTextColor,
+                                                    fontWeight: currentPage === tab.link ? 'bold' : 'normal'
+                                                }}
+                                                onClick={() => handleNavTabClick(tab)}
+                                            >
                                                 {tab.label}
                                             </span>
                                         ))}
@@ -1035,7 +1098,15 @@ export default function TemplateBuilderPage() {
                                         </div>
                                         <div style={styles.sidebarTabs}>
                                             {navbarTabs.map((tab) => (
-                                                <span key={tab.id} style={{ ...styles.sidebarTab, color: navbarTextColor }}>
+                                                <span 
+                                                    key={tab.id} 
+                                                    style={{ 
+                                                        ...styles.sidebarTab, 
+                                                        color: navbarTextColor,
+                                                        fontWeight: currentPage === tab.link ? 'bold' : 'normal'
+                                                    }}
+                                                    onClick={() => handleNavTabClick(tab)}
+                                                >
                                                     {tab.label}
                                                 </span>
                                             ))}
@@ -1043,9 +1114,10 @@ export default function TemplateBuilderPage() {
                                     </div>
                                     <div style={styles.sidebarContent}>
                                         {/* Sections rendered inside sidebar layout */}
-                                        {sections.map((section) => (
+                                        {getVisibleSections().map((section) => (
                                             <div
                                                 key={section.id}
+                                                id={`preview-section-${section.id}`}
                                                 style={{
                                                     ...styles.previewSection,
                                                     backgroundColor: section.background.imageUrl ? 'transparent' : section.background.color,
@@ -1058,6 +1130,13 @@ export default function TemplateBuilderPage() {
                                                 {section.blocks.map((block) => renderPreviewBlock(block))}
                                             </div>
                                         ))}
+                                        {/* Empty state for multi-page with no sections */}
+                                        {siteType === 'multi-page' && currentPage && getVisibleSections().length === 0 && (
+                                            <div style={styles.emptyPagePlaceholder}>
+                                                <p>Deze pagina heeft nog geen secties.</p>
+                                                <p>Voeg een sectie toe en koppel het aan deze pagina.</p>
+                                            </div>
+                                        )}
                                         {/* Footer in sidebar layout */}
                                         <div style={{
                                             ...styles.previewFooter,
@@ -1075,9 +1154,10 @@ export default function TemplateBuilderPage() {
                             {/* Preview Sections (for navbar layout) */}
                             {navType === 'navbar' && (
                                 <>
-                                    {sections.map((section) => (
+                                    {getVisibleSections().map((section) => (
                                         <div
                                             key={section.id}
+                                            id={`preview-section-${section.id}`}
                                             style={{
                                                 ...styles.previewSection,
                                                 backgroundColor: section.background.imageUrl ? 'transparent' : section.background.color,
@@ -1090,6 +1170,14 @@ export default function TemplateBuilderPage() {
                                             {section.blocks.map((block) => renderPreviewBlock(block))}
                                         </div>
                                     ))}
+
+                                    {/* Empty state for multi-page with no sections */}
+                                    {siteType === 'multi-page' && currentPage && getVisibleSections().length === 0 && (
+                                        <div style={styles.emptyPagePlaceholder}>
+                                            <p>Deze pagina heeft nog geen secties.</p>
+                                            <p>Voeg een sectie toe en koppel het aan deze pagina.</p>
+                                        </div>
+                                    )}
 
                                     {/* Preview Footer */}
                                     <div style={{
@@ -1126,7 +1214,15 @@ export default function TemplateBuilderPage() {
                                 </div>
                                 <div style={styles.previewNavTabs}>
                                     {navbarTabs.map((tab) => (
-                                        <span key={tab.id} style={{ ...styles.previewNavTab, color: navbarTextColor }}>
+                                        <span 
+                                            key={tab.id} 
+                                            style={{ 
+                                                ...styles.previewNavTab, 
+                                                color: navbarTextColor,
+                                                fontWeight: currentPage === tab.link ? 'bold' : 'normal'
+                                            }}
+                                            onClick={() => handleNavTabClick(tab)}
+                                        >
                                             {tab.label}
                                         </span>
                                     ))}
@@ -1148,16 +1244,25 @@ export default function TemplateBuilderPage() {
                                     </div>
                                     <div style={styles.sidebarTabs}>
                                         {navbarTabs.map((tab) => (
-                                            <span key={tab.id} style={{ ...styles.sidebarTab, color: navbarTextColor }}>
+                                            <span 
+                                                key={tab.id} 
+                                                style={{ 
+                                                    ...styles.sidebarTab, 
+                                                    color: navbarTextColor,
+                                                    fontWeight: currentPage === tab.link ? 'bold' : 'normal'
+                                                }}
+                                                onClick={() => handleNavTabClick(tab)}
+                                            >
                                                 {tab.label}
                                             </span>
                                         ))}
                                     </div>
                                 </div>
                                 <div style={styles.sidebarContent}>
-                                    {sections.map((section) => (
+                                    {getVisibleSections().map((section) => (
                                         <div
                                             key={section.id}
+                                            id={`fullpreview-section-${section.id}`}
                                             style={{
                                                 ...styles.previewSection,
                                                 backgroundColor: section.background.imageUrl ? 'transparent' : section.background.color,
@@ -1170,6 +1275,12 @@ export default function TemplateBuilderPage() {
                                             {section.blocks.map((block) => renderPreviewBlock(block))}
                                         </div>
                                     ))}
+                                    {siteType === 'multi-page' && currentPage && getVisibleSections().length === 0 && (
+                                        <div style={styles.emptyPagePlaceholder}>
+                                            <p>Deze pagina heeft nog geen secties.</p>
+                                            <p>Voeg een sectie toe en koppel het aan deze pagina.</p>
+                                        </div>
+                                    )}
                                     <div style={{
                                         ...styles.previewFooter,
                                         fontFamily: footer.style.fontFamily,
@@ -1186,9 +1297,10 @@ export default function TemplateBuilderPage() {
                         {/* Preview Sections (for navbar layout) */}
                         {navType === 'navbar' && (
                             <>
-                                {sections.map((section) => (
+                                {getVisibleSections().map((section) => (
                                     <div
                                         key={section.id}
+                                        id={`fullpreview-section-${section.id}`}
                                         style={{
                                             ...styles.previewSection,
                                             backgroundColor: section.background.imageUrl ? 'transparent' : section.background.color,
@@ -1201,6 +1313,14 @@ export default function TemplateBuilderPage() {
                                         {section.blocks.map((block) => renderPreviewBlock(block))}
                                     </div>
                                 ))}
+
+                                {/* Empty state for multi-page with no sections */}
+                                {siteType === 'multi-page' && currentPage && getVisibleSections().length === 0 && (
+                                    <div style={styles.emptyPagePlaceholder}>
+                                        <p>Deze pagina heeft nog geen secties.</p>
+                                        <p>Voeg een sectie toe en koppel het aan deze pagina.</p>
+                                    </div>
+                                )}
 
                                 {/* Preview Footer */}
                                 <div style={{
@@ -1500,6 +1620,14 @@ const styles = {
         cursor: 'pointer',
         fontSize: '11px',
     },
+    navLinkSelect: {
+        width: '100%',
+        padding: '0.4rem',
+        fontSize: '13px',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        boxSizing: 'border-box',
+    },
     blocksArea: {
         marginTop: '1rem',
         paddingTop: '0.75rem',
@@ -1737,6 +1865,17 @@ const styles = {
         justifyContent: 'center',
         alignItems: 'center',
         textAlign: 'center',
+    },
+    emptyPagePlaceholder: {
+        padding: '3rem 2rem',
+        textAlign: 'center',
+        backgroundColor: '#f5f5f5',
+        color: '#666',
+        minHeight: '200px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     previewFooter: {
         padding: '2rem',
