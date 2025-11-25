@@ -59,13 +59,11 @@ export default function PublicerenPage() {
                 .from('sites')
                 .insert([
                     {
-                        owner_id: user.id,
+                        user_id: user.id,
                         title: formData.title,
                         description: formData.description,
                         slug,
                         is_published: true,
-                        // later kun je hier ook "config" zetten met je SiteConfig JSON
-                        // config: siteConfig,
                     },
                 ])
                 .select()
