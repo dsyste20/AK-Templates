@@ -328,13 +328,20 @@ export default function TemplateBuilderPage() {
         setSections(newSections);
     };
 
+    // Block type icon mapping
+    const BLOCK_ICONS = {
+        hero: '🎯',
+        text: '📝',
+        image: '🖼️',
+    };
+
     // Block management within sections
     const addBlock = (sectionId, type) => {
         const newBlock = {
             id: `block-${type}-${Date.now()}`,
             type: type,
             content: type === 'hero' ? 'Hero Tekst' : type === 'image' ? '' : 'Nieuwe tekst...',
-            imageUrl: type === 'image' ? '' : undefined,
+            imageUrl: '',
             style: { fontFamily: 'Arial', fontSize: type === 'hero' ? 36 : 16, color: '#333333' },
             align: 'center'
         };
@@ -774,7 +781,7 @@ export default function TemplateBuilderPage() {
                                                 <div key={block.id} style={styles.blockEditor}>
                                                     <div style={styles.blockHeader}>
                                                         <span style={styles.blockType}>
-                                                            {block.type === 'hero' ? '🎯' : block.type === 'image' ? '🖼️' : '📝'} {block.type}
+                                                            {BLOCK_ICONS[block.type] || '📄'} {block.type}
                                                         </span>
                                                         <div style={styles.blockActions}>
                                                             <button
