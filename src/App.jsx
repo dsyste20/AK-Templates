@@ -12,6 +12,7 @@ import BuilderPage from './pages/BuilderPage';
 import SinglePageSite from './pages/SinglePageSite';
 import MultiPageSite from './pages/MultiPageSite';
 import TemplateBuilderPage from './pages/TemplateBuilderPage';
+import PublicSitePage from "./pages/PublicSitePage.jsx";
 import './App.css';
 
 function App() {
@@ -36,6 +37,8 @@ function App() {
           {/* Template builder routes */}
           <Route path="/templates/builder" element={<ProtectedRoute><TemplateBuilderPage /></ProtectedRoute>} />
           <Route path="/templates/builder/:id" element={<ProtectedRoute><TemplateBuilderPage /></ProtectedRoute>} />
+          <Route path="/w/:slug" element={<PublicSitePage />} />
+
         </Routes>
       </Router>
     </SiteProvider>
