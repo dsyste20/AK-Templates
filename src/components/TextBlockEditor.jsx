@@ -2,16 +2,7 @@
  * TextBlockEditor - A reusable component for editing text/hero block properties
  * Handles content, font, size, color, and alignment
  */
-
-// Available web-safe fonts (should match TemplateBuilderPage)
-const FONT_OPTIONS = [
-    'Arial',
-    'Georgia',
-    'Helvetica Neue',
-    'Times New Roman',
-    'Courier New',
-    'Roboto',
-];
+import { FONT_OPTIONS, BLOCK_ICONS } from '../lib/constants';
 
 export default function TextBlockEditor({
     block,
@@ -24,12 +15,6 @@ export default function TextBlockEditor({
     isFirst,
     isLast,
 }) {
-    // Block type icon mapping
-    const BLOCK_ICONS = {
-        hero: '🎯',
-        text: '📝',
-    };
-
     return (
         <div style={styles.blockEditor}>
             <div style={styles.blockHeader}>

@@ -3,23 +3,10 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { uploadToStorage, generateFilePath } from '../lib/storage';
-
-// Available web-safe fonts
-const FONT_OPTIONS = [
-    'Arial',
-    'Georgia',
-    'Helvetica Neue',
-    'Times New Roman',
-    'Courier New',
-    'Roboto',
-];
-
-// File upload validation constants
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+import { FONT_OPTIONS, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, BLOCK_ICONS } from '../lib/constants';
 
 /**
- * Validates an image file before upload
+ * Validates an image file before upload (provides user-friendly Dutch error messages)
  * @param {File} file - The file to validate
  * @returns {{valid: boolean, error: string|null}}
  */
@@ -346,13 +333,6 @@ export default function TemplateBuilderPage() {
         const newSections = [...sections];
         [newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
         setSections(newSections);
-    };
-
-    // Block type icon mapping
-    const BLOCK_ICONS = {
-        hero: '🎯',
-        text: '📝',
-        image: '🖼️',
     };
 
     // Block management within sections

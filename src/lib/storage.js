@@ -1,8 +1,5 @@
 import { supabase } from './supabaseClient';
-
-// Validation constants
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'];
+import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from './constants';
 
 /**
  * Validates a file before upload
@@ -17,7 +14,7 @@ export function validateFile(file) {
     throw new Error('File size exceeds maximum allowed size of 5MB');
   }
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    throw new Error('File type not allowed. Only PNG, JPG, JPEG, and WebP images are accepted');
+    throw new Error('File type not allowed. Only PNG, JPG, JPEG, GIF, and WebP images are accepted');
   }
 }
 
