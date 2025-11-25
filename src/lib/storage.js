@@ -9,7 +9,7 @@ const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpg', 'image/jpeg', 'image/webp
  * @param {File} file - The file to validate
  * @throws {Error} If file is invalid
  */
-function validateFile(file) {
+export function validateFile(file) {
   if (!file) {
     throw new Error('No file provided');
   }
